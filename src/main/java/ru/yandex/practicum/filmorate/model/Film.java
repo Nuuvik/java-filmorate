@@ -15,28 +15,21 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class Film {
-    protected int id;
+    private int id;
 
-    @NotBlank(message = "Название не может быть пустым")
-    protected String name;
+    @NotBlank
+    private String name;
 
-    @Size(max = 200, message = "Максимальная длина описания - 200 символов")
-    protected String description;
+    @Size(max = 200)
+    private String description;
 
     @ReleaseDate
-    protected LocalDate releaseDate;
+    private LocalDate releaseDate;
 
-    @Positive(message = "Продолжительность фильма должна быть положительной")
-    protected int duration;
-
-    public Film(String name, String description, LocalDate releaseDate, int duration) {
-        this.name = name;
-        this.description = description;
-        this.releaseDate = releaseDate;
-        this.duration = duration;
-    }
+    @Positive
+    private int duration;
 }
 
 

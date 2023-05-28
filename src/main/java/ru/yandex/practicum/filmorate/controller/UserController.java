@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.UpdateException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.validator.UserValidator;
 
 import javax.validation.Valid;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ public class UserController {
     @PostMapping
     public User create(@Valid @RequestBody User user) {
         user.setId(++id);
-        if (user.getName() == null) {
+        if (user.getName() == null) {  //check null
             user.setName(user.getLogin());
         }
         users.put(user.getId(), user);
@@ -31,15 +32,16 @@ public class UserController {
     }
 
     @PutMapping
-    public User update(@Valid @RequestBody User user) {
-        if (users.containsKey(user.getId())) {
-            users.remove(user.getId());
-            users.put(user.getId(), user);
-            log.info("Обновлен пользователь: {}", user);
-            return user;
-        } else {
-            throw new UpdateException("Пользователь с идентификатором " + user.getId() + " не найден.");
+    public User update(@Valid @RequestBody User user) throws UpdateException {
+        log.info("Обновлен пользователь: {}", user);
+        if (UserValidator.isUserNotFound(users, user)) {
+            throw new UpdateException("Такого пользователя нет.");
         }
+
+
+        users.put(user.getId(), user);
+
+        return user;
     }
 
     @GetMapping

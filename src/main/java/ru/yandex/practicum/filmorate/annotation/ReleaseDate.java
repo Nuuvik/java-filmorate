@@ -5,19 +5,23 @@ import ru.yandex.practicum.filmorate.validator.ReleaseDateValidator;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER, ElementType.TYPE_USE})
+@Target({FIELD, PARAMETER})
 @Retention(RUNTIME)
-@Constraint(validatedBy = {ReleaseDateValidator.class})
+@Constraint(validatedBy = ReleaseDateValidator.class)
 public @interface ReleaseDate {
-    String message() default "Дата релиза не может быть раньше даты рождения кино";
+
+    String message() default "Указана неверная дата.";
 
     Class<?>[] groups() default {};
 
     Class<? extends Payload>[] payload() default {};
+
+    boolean optional() default false;
 }
