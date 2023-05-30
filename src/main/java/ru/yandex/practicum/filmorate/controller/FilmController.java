@@ -23,6 +23,7 @@ public class FilmController {
 
     @PostMapping
     public Film create(@Valid @RequestBody Film film) {
+        log.debug("Запрос на добавление фильма: {}", film);
         film.setId(++id);
         films.put(film.getId(), film);
         log.info("Добавлен новый фильм: {}", film);
@@ -32,12 +33,13 @@ public class FilmController {
 
     @PutMapping
     public Film update(@Valid @RequestBody Film film) throws UpdateException {
-        log.info("Обновлен фильм: {}", film);
+        log.debug("Запрос на обновление фильма: {}", film);
         if (FilmValidator.isFilmNotFound(films, film)) {
             throw new UpdateException("Такого фильма нет.");
         }
 
         films.put(film.getId(), film);
+        log.info("Обновлен фильм: {}", film);
         return film;
     }
 

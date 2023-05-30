@@ -64,9 +64,7 @@ public class FilmControllerTest {
     void shouldNotCreateFilmIfDescriptionTooLong() {
         Film filmWithIncorrectDescription = film
                 .toBuilder()
-                .description("Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget " +
-                        "dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur" +
-                        " ridiculus mus. Donec qua") // 201 символ
+                .description("f".repeat(201))
                 .build();
 
         Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectDescription);

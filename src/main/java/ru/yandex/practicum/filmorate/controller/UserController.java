@@ -22,8 +22,9 @@ public class UserController {
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
+        log.debug("Запрос на добавление пользователя: {}", user);
         user.setId(++id);
-        if (user.getName() == null) {  //check null
+        if (user.getName() == null) {
             user.setName(user.getLogin());
         }
         users.put(user.getId(), user);
@@ -33,14 +34,14 @@ public class UserController {
 
     @PutMapping
     public User update(@Valid @RequestBody User user) throws UpdateException {
-        log.info("Обновлен пользователь: {}", user);
+        log.debug("Запрос на обновление пользователя: {}", user);
         if (UserValidator.isUserNotFound(users, user)) {
             throw new UpdateException("Такого пользователя нет.");
         }
 
 
         users.put(user.getId(), user);
-
+        log.info("Обновлен пользователь: {}", user);
         return user;
     }
 
