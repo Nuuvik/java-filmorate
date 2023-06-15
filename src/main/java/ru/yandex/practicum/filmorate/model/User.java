@@ -1,37 +1,38 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.yandex.practicum.filmorate.annotation.Login;
 
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.PastOrPresent;
+import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class User {
-    protected int id;
-    @NotNull(message = "Электронная почта не может быть пустой")
-    @Email(message = "Некорректный формат электронной почты")
-    protected String email;
+    private int id;
 
-    @Login
-    protected String login;
+    @Email(regexp = "^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
+    @NotBlank
+    private String email;
 
-    protected String name;
+    @Pattern(regexp = "^[^\\s]+$")
+    @NotBlank
+    private String login;
 
-    @Past(message = "Дата рождения не может быть в будущем")
-    protected LocalDate birthday;
+    private String name;
 
-    public User(String email, String login, LocalDate birthday) {
-        this.email = email;
-        this.login = login;
-        this.birthday = birthday;
-    }
+    @PastOrPresent
+    private LocalDate birthday;
+
+    private Set<Integer> friends = new HashSet<>();
 }
