@@ -1,87 +1,101 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.exception.UpdateException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Arrays;
+import java.util.Set;
 
 @SpringBootTest
 
 public class FilmControllerTest {
-    private Film film;
-    private FilmController filmController;
-
-
-    @Test
-    public void shouldCreateFilm() {
-        Film film1 = new Film("name1", "description1", LocalDate.of(2022, 6, 1), 60);
-        Film film2 = new Film("name1", "description1", LocalDate.of(2022, 6, 1), 60);
-        film2.setId(1);
-        FilmController filmController = new FilmController();
-        Film film3 = filmController.create(film1);
-        assertEquals(film2.getId(), film3.getId());
-        assertEquals(film2.getName(), film3.getName());
-        assertEquals(film2.getDescription(), film3.getDescription());
-        assertEquals(film2.getReleaseDate(), film3.getReleaseDate());
-        assertEquals(film2.getDuration(), film3.getDuration());
-    }
-
+    private final Film film = Film.builder()
+            .name("film name")
+            .description("desc")
+            .releaseDate(LocalDate.parse("2023-01-01"))
+            .duration(100)
+            .build();
+    private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    private final Validator validator = validatorFactory.getValidator();
 
     @Test
-    public void shouldNotCreateFilm() {
-        Film invalidFilm = new Film();
-        invalidFilm.setName("");
-        invalidFilm.setDescription("");
-        invalidFilm.setReleaseDate(LocalDate.now());
-        invalidFilm.setDuration(-1);
+    void shouldCreateFilm() {
+        Set<ConstraintViolation<Film>> violations = validator.validate(film);
 
-        assertThrows(NullPointerException.class, () -> filmController.create(invalidFilm));
-
+        Assertions.assertTrue(violations.isEmpty());
     }
 
     @Test
-    void shouldUpdateFilm() {
-        FilmController filmController = new FilmController();
-        Film film1 = new Film("name1", "description1", LocalDate.of(2022, 6, 1), 60);
-        filmController.create(film1);
-        Film film2 = new Film("name2", "description2", LocalDate.of(2022, 6, 2), 120);
-        film2.setId(1);
-        Film film3 = filmController.update(film2);
-        assertEquals(film2.getId(), film3.getId());
-        assertEquals(film2.getName(), film3.getName());
-        assertEquals(film2.getDescription(), film3.getDescription());
-        assertEquals(film2.getReleaseDate(), film3.getReleaseDate());
-        assertEquals(film2.getDuration(), film3.getDuration());
+    void shouldCreateFilmWithFirstFilmDate() {
+        Film filmWithFirstFilmDate = film
+                .toBuilder()
+                .releaseDate(LocalDate.parse("1895-12-28"))
+                .build();
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithFirstFilmDate);
+
+        Assertions.assertTrue(violations.isEmpty());
     }
 
     @Test
-    void shouldNotUpdateFilmWithWrongId() {
-        FilmController filmController = new FilmController();
-        Film film1 = new Film("name1", "description1", LocalDate.of(2022, 6, 1), 60);
-        filmController.create(film1);
+    void shouldNotCreateFilmIfNameIsEmpty() {
+        String[] names = {"", " ", "  ", null};
 
-        Film film2 = new Film("name2", "description2", LocalDate.of(2022, 6, 2), 120);
-        film2.setId(999);
+        Arrays.stream(names).forEach(name -> {
+            Film filmWithIncorrectName = film
+                    .toBuilder()
+                    .name(name)
+                    .build();
 
-        assertThrows(UpdateException.class, () -> filmController.update(film2));
+            Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectName);
+
+            Assertions.assertFalse(violations.isEmpty());
+        });
     }
 
     @Test
-    void findAll() throws ValidationException {
-        FilmController filmController = new FilmController();
-        List<Film> films = filmController.findAll();
-        assertEquals(0, films.size());
-        Film film1 = new Film("name1", "description1", LocalDate.of(2022, 6, 1), 60);
-        filmController.create(film1);
-        films = filmController.findAll();
-        assertEquals(1, films.size());
+    void shouldNotCreateFilmIfDescriptionTooLong() {
+        Film filmWithIncorrectDescription = film
+                .toBuilder()
+                .description("f".repeat(201))
+                .build();
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectDescription);
+
+        Assertions.assertFalse(violations.isEmpty());
+        Assertions.assertEquals(1, violations.size());
     }
 
+    @Test
+    void shouldNotCreateFilmIfReleaseDateIsWrong() {
+        Film filmWithIncorrectReleaseDate = film
+                .toBuilder()
+                .releaseDate(LocalDate.parse("1800-01-01"))
+                .build();
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectReleaseDate);
+
+        Assertions.assertFalse(violations.isEmpty());
+        Assertions.assertEquals(1, violations.size());
+    }
+
+    @Test
+    void shouldNotCreateFilmIfDurationIsWrong() {
+        Film filmWithIncorrectDuration = film
+                .toBuilder()
+                .duration(-100)
+                .build();
+
+        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectDuration);
+
+        Assertions.assertFalse(violations.isEmpty());
+        Assertions.assertEquals(1, violations.size());
+    }
 }
