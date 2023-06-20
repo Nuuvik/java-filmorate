@@ -4,7 +4,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UpdateException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.validator.FilmValidator;
 
 import java.util.List;
@@ -16,9 +16,9 @@ public class FilmService {
 
     private static final String NOT_FOUND_FILM = "фильма с id %s нет";
     private static final String NOT_FOUND_USER = "пользователя с userId %s нет";
-    private final FilmStorage filmStorage;
+    private final InMemoryFilmStorage filmStorage;
 
-    public FilmService(FilmStorage inMemoryFilmStorage) {
+    public FilmService(InMemoryFilmStorage inMemoryFilmStorage) {
         this.filmStorage = inMemoryFilmStorage;
     }
 

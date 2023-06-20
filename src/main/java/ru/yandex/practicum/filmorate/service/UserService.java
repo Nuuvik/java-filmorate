@@ -3,7 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UpdateException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.validator.UserValidator;
 
 import java.util.List;
@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private static final String NOT_FOUND_MESSAGE = "пользователя с id %s нет";
-    private final UserStorage userStorage;
+    private final InMemoryUserStorage userStorage;
 
-    public UserService(UserStorage inMemoryUserStorage) {
+    public UserService(InMemoryUserStorage inMemoryUserStorage) {
         this.userStorage = inMemoryUserStorage;
     }
 
