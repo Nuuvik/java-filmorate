@@ -13,5 +13,9 @@ public class UserValidator {
         return Objects.isNull(users.get(user.getId()));
     }
 
+    public static boolean isUserNameValid(String userName) {
+        return Objects.nonNull(userName) && !userName.isEmpty() && !userName.isBlank();
+    }
+
 
 }
