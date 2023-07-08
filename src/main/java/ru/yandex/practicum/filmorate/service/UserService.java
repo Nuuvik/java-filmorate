@@ -1,92 +1,73 @@
 package ru.yandex.practicum.filmorate.service;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.UpdateException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.friendship.FriendshipStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import ru.yandex.practicum.filmorate.validator.UserValidator;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Collection;
 
 @Service
 public class UserService {
 
     private static final String NOT_FOUND_MESSAGE = "пользователя с id %s нет";
-    private final InMemoryUserStorage userStorage;
+    private final UserStorage userStorage;
+    private final FriendshipStorage friendshipStorage;
 
-    public UserService(InMemoryUserStorage inMemoryUserStorage) {
-        this.userStorage = inMemoryUserStorage;
+    public UserService(@Qualifier("UserDbStorage") UserStorage userStorage,
+                       @Qualifier("FriendshipDbStorage") FriendshipStorage friendshipStorage) {
+        this.userStorage = userStorage;
+        this.friendshipStorage = friendshipStorage;
     }
 
     public User createUser(User user) {
         setUserName(user);
 
-        return userStorage.create(user);
+        return userStorage.createUser(user);
     }
 
-    public Map<Integer, User> getUsers() {
-        return userStorage.getAll();
+    public Collection<User> getAllUsers() {
+        return userStorage.getAllUsers();
     }
 
     public User getUserById(Integer id) {
-        User user = userStorage.getById(id);
+        User user = userStorage.getUserById(id);
 
-        checkUserIsNotNull(user, id);
+        checkUserIsNotFound(user, id);
 
         return user;
     }
 
-    public List<User> getUserFriends(Integer id) {
-        User user = userStorage.getById(id);
-
-        checkUserIsNotNull(user, id);
-
-        Map<Integer, User> users = getUsers();
-
-        return user
-                .getFriends()
-                .stream()
-                .map(users::get)
-                .collect(Collectors.toList());
+    public Collection<User> getUserFriends(Integer id) {
+        return userStorage.getUserFriends(id);
     }
 
-    public List<User> getCommonFriends(User user1, User user2) {
-        checkUserIsNotNull(user1, user1.getId());
-        checkUserIsNotNull(user2, user2.getId());
-
-        Map<Integer, User> users = getUsers();
-        Set<Integer> user1Friends = user1.getFriends();
-        Set<Integer> user2Friends = user2.getFriends();
-
-        return user1Friends
-                .stream()
-                .filter(user2Friends::contains)
-                .map(users::get)
-                .collect(Collectors.toList());
+    public Collection<User> getCommonFriends(Integer firstUserId, Integer secondUserId) {
+        return userStorage.getCommonFriends(firstUserId, secondUserId);
     }
 
     public User updateUser(User user) {
-        checkUserIsNotNull(user, user.getId());
+        User userFromBD = userStorage.getUserById(user.getId());
+
+        checkUserIsNotFound(userFromBD, user.getId());
         setUserName(user);
-        return userStorage.update(user);
+
+        return userStorage.updateUser(user);
     }
 
-    public void addFriendToUser(User user, User friend) {
-        checkUserIsNotNull(user, user.getId());
-        user.getFriends().add(friend.getId());
-        userStorage.update(user);
+    public void addFriend(Integer userId, Integer friendId) {
+        friendshipStorage.addFriend(userId, getUserById(friendId).getId());
     }
 
-    public void deleteFriendFromUser(User user, User friend) {
-        checkUserIsNotNull(user, user.getId());
-        user.getFriends().remove(friend.getId());
+    public void deleteFriend(Integer userId, Integer friendId) {
+        friendshipStorage.deleteFriend(userId, friendId);
     }
 
-    private void checkUserIsNotNull(User user, Integer id) {
-        if (UserValidator.isUserNotFound(getUsers(), user)) {
+    private void checkUserIsNotFound(User user, Integer id) {
+        if (UserValidator.isUserNotFound(user)) {
             throw new UpdateException(String.format(NOT_FOUND_MESSAGE, id));
         }
     }
