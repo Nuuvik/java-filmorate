@@ -43,14 +43,14 @@ public class FilmControllerTest {
     }
 
     @Test
-    public void UserMustBeCreatedWith200Desc() {
+    public void userMustBeCreatedWith200Desc() {
         film.setDescription(RandomStringUtils.random(200));
         filmController.postFilm(film);
         assertFalse(filmController.getFilms().isEmpty());
     }
 
     @Test
-    public void UserMustBeNotCreatedWith201Desc() {
+    public void userMustBeNotCreatedWith201Desc() {
         film.setDescription(RandomStringUtils.random(201));
         assertThrows(ValidationException.class, () -> filmController.postFilm(film));
     }
