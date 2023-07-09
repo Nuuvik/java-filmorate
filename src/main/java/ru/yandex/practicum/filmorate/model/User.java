@@ -6,21 +6,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.PastOrPresent;
-import javax.validation.constraints.Pattern;
+import javax.validation.constraints.*;
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder(toBuilder = true)
 public class User {
-    private int id;
+    private Integer id;
 
-    @Email(regexp = "^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
+    @Email
     @NotBlank
+    @NotNull
     private String email;
 
     @Pattern(regexp = "^[^\\s]+$")
@@ -31,5 +30,5 @@ public class User {
 
     @PastOrPresent
     private LocalDate birthday;
-
+    private Set<Integer> friends;
 }

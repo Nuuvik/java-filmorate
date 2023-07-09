@@ -1,39 +1,36 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.UpdateException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
-import ru.yandex.practicum.filmorate.validator.MpaValidator;
+import ru.yandex.practicum.filmorate.storage.filmMpa.MpaDbStorage;
 
-import java.util.Collection;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class MpaService {
+    private final MpaDbStorage mpaDbStorage;
 
-    private static final String NOT_FOUND_MESSAGE = "MPA рейтинга с id %s нет";
-    private final MpaStorage mpaStorage;
-
-    public MpaService(@Qualifier("MpaDbStorage") MpaStorage mpaStorage) {
-        this.mpaStorage = mpaStorage;
+    public Mpa getMpaById(int id) {
+        try {
+            return mpaDbStorage.getMpaById(id);
+        } catch (Exception e) {
+            throw new NotFoundException("Мпа не найден");
+        }
     }
 
-    public Mpa getMapById(Integer id) {
-        Mpa mpa = mpaStorage.getMpaById(id);
-
-        checkMpaIsNotNull(mpa, id);
-
-        return mpa;
-    }
-
-    public Collection<Mpa> getAllMpa() {
-        return mpaStorage.getAllMpa();
-    }
-
-    private void checkMpaIsNotNull(Mpa mpa, Integer id) {
-        if (MpaValidator.isMpaNotFound(getAllMpa(), mpa)) {
-            throw new UpdateException(String.format(NOT_FOUND_MESSAGE, id));
+    public List<Mpa> getAllMpa() {
+        try {
+            return mpaDbStorage.getAllMpa()
+                    .stream()
+                    .sorted((o1, o2) -> o1.getId() - o2.getId())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new NotFoundException("Мпа не найден");
         }
     }
 }

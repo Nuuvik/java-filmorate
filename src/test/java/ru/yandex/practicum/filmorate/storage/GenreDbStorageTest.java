@@ -8,28 +8,28 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.test.annotation.DirtiesContext;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.storage.filmMpa.MpaDbStorage;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.storage.filmGenre.GenreDbStorage;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class MpaStorageTest {
-    private final MpaDbStorage mpaDbStorage;
+public class GenreDbStorageTest {
+    private final GenreDbStorage genreDbStorage;
 
     @Test
-    public void getAllMpaCallMethodGetAllMpa() {
-        Assertions.assertEquals(5, mpaDbStorage.getAllMpa().size());
+    public void getNotEmptyListGenresCallMethodGetAllGenre() {
+        Assertions.assertFalse(genreDbStorage.getAllGenre().isEmpty());
     }
 
     @Test
-    public void getMpaByIdMpaExistInBd() {
-        Assertions.assertEquals(Mpa.builder().id(2).name("PG").build(), mpaDbStorage.getMpaById(2));
+    public void getGenreByIdCallMethodGetGenreById() {
+        Assertions.assertEquals(Genre.builder().id(2).name("Драма").build(), genreDbStorage.getGenreById(2));
     }
 
     @Test
-    public void getNotFoundExceptionMpaNotExistInBd() {
-        Assertions.assertThrows(EmptyResultDataAccessException.class, () -> mpaDbStorage.getMpaById(9));
+    public void getNotFoundExceptionCallMethodGetGenreById() {
+        Assertions.assertThrows(EmptyResultDataAccessException.class, () -> genreDbStorage.getGenreById(9));
     }
 }
