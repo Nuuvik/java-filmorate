@@ -14,7 +14,6 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
 
-import static java.util.Calendar.DECEMBER;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -43,27 +42,27 @@ public class FilmControllerTest {
     }
 
     @Test
-    public void userMustBeCreatedWith200Desc() {
+    public void filmMustBeCreatedWith200Desc() {
         film.setDescription(RandomStringUtils.random(200));
         filmController.postFilm(film);
         assertFalse(filmController.getFilms().isEmpty());
     }
 
     @Test
-    public void userMustBeNotCreatedWith201Desc() {
+    public void filmMustBeNotCreatedWith201Desc() {
         film.setDescription(RandomStringUtils.random(201));
         assertThrows(ValidationException.class, () -> filmController.postFilm(film));
     }
 
     @Test
     public void releaseDate1895NotValid() {
-        film.setReleaseDate(LocalDate.of(1895, 12, 28));
+        film.setReleaseDate(LocalDate.of(1895, 12, 27));
         assertThrows(ValidationException.class, () -> filmController.postFilm(film));
     }
 
     @Test
     public void releaseDate1896IsValid() {
-        film.setReleaseDate(LocalDate.of(1896, DECEMBER, 28));
+        film.setReleaseDate(LocalDate.of(1896, 12, 28));
         filmController.postFilm(film);
         assertFalse(filmController.getFilms().isEmpty());
     }

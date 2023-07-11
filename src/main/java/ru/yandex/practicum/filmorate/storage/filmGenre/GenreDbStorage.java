@@ -31,7 +31,12 @@ public class GenreDbStorage implements GenreStorage {
     }
 
     @Override
-    public List<Film> setGenreInFilm(List<Film> films) {
+    public Film setGenreInFilm(Film film) {
+        List<Film> films = setGenresInFilm(List.of(film));
+        return films.get(0);
+    }
+
+    public List<Film> setGenresInFilm(List<Film> films) {
         List<Integer> filmIds = new ArrayList<>();
         films.forEach(film -> filmIds.add(film.getId()));
         String sql =
@@ -42,7 +47,7 @@ public class GenreDbStorage implements GenreStorage {
                         "FROM GENRE g  \n" +
                         "JOIN FILM_GENRE fg ON fg.GENRE_ID = g.ID \n" +
                         "where fg.film_Id IN (" + StringUtils.join(filmIds, ',') + ")" +
-                        "ORDER BY g.id asc;;";
+                        "ORDER BY g.id asc;";
 
         SqlRowSet genreRows = jdbcTemplate.queryForRowSet(sql);
         while (genreRows.next()) {

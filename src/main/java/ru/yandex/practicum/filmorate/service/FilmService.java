@@ -21,43 +21,38 @@ public class FilmService {
     private final GenreStorage genreStorage;
 
     public List<Film> getFilms() {
-        return genreStorage.setGenreInFilm(filmStorage.getFilms());
+        return genreStorage.setGenresInFilm(filmStorage.getFilms());
     }
 
     public Film addFilm(Film film) {
-        if (isValidation(film)) {
-            return genreStorage.setGenreInFilm(List.of(filmStorage.addFilm(film))).get(0);
-        } else {
-            throw new ValidationException();
-        }
+        validate(film);
+        return genreStorage.setGenreInFilm(filmStorage.addFilm(film));
     }
 
     public Film updateFilm(Film film) {
-        if (isValidation(film)) {
-            if (filmStorage.checkFilmExistInBd(film.getId())) {
-                genreStorage.deleteFilmGenre(film);
-                return genreStorage.setGenreInFilm(List.of(filmStorage.updateFilm(film))).get(0);
-            } else {
-                throw new NotFoundException("Фильм не найден");
-            }
+        validate(film);
+        if (filmStorage.checkFilmExistInBd(film.getId())) {
+            genreStorage.deleteFilmGenre(film);
+            return genreStorage.setGenreInFilm(filmStorage.updateFilm(film));
         } else {
-            throw new ValidationException();
+            throw new NotFoundException("Фильм не найден");
         }
     }
 
     public Film getFilmById(int filmId) {
-        try {
-            return genreStorage.setGenreInFilm(List.of(filmStorage.getFilmById(filmId))).get(0);
-        } catch (Exception e) {
+        Film film = filmStorage.getFilmById(filmId);
+        if (film == null) {
             throw new NotFoundException("Фильм не найден");
         }
+        return genreStorage.setGenreInFilm(film);
+
     }
 
     public Film addLike(int filmId, int userId) {
         if (filmStorage.checkFilmExistInBd(filmId)) {
             filmStorage.addLike(userId, filmId);
             log.info("Добавлен лайк от - {} фильму - {}", userId, filmId);
-            return genreStorage.setGenreInFilm(List.of(filmStorage.getFilmById(filmId))).get(0);
+            return genreStorage.setGenreInFilm(filmStorage.getFilmById(filmId));
         } else {
             throw new NotFoundException("Фильм не найден");
         }
@@ -67,7 +62,7 @@ public class FilmService {
         if (checkFilmAndLikeInExistInDb(filmId, userId)) {
             filmStorage.deleteLike(userId, filmId);
             log.info("Удален лайк - {} у фильму - {}", userId, filmId);
-            return genreStorage.setGenreInFilm(List.of(filmStorage.getFilmById(filmId))).get(0);
+            return genreStorage.setGenreInFilm(filmStorage.getFilmById(filmId));
         } else if (!filmStorage.checkFilmExistInBd(filmId)) {
             throw new NotFoundException("Фильм не найден");
         } else {
@@ -90,12 +85,10 @@ public class FilmService {
         return filmStorage.checkFilmExistInBd(id) && filmStorage.checkFilmExistInBd(userId);
     }
 
-    private boolean isValidation(Film film) throws ValidationException {
-        if (film.getReleaseDate().isAfter(LocalDate.of(1895, 12, 28)) &&
-                film.getDescription().length() <= 200 &&
-                film.getDuration() > 0) {
-            return true;
-        } else {
+    private void validate(Film film) {
+        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28)) ||
+                film.getDescription().length() > 200 ||
+                film.getDuration() <= 0) {
             throw new ValidationException();
         }
     }
