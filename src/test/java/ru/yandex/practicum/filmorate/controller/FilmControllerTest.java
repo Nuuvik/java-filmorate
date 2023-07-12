@@ -1,101 +1,82 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.junit.jupiter.api.Assertions;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
-
+@AutoConfigureTestDatabase
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FilmControllerTest {
-    private final Film film = Film.builder()
-            .name("film name")
-            .description("desc")
-            .releaseDate(LocalDate.parse("2023-01-01"))
-            .duration(100)
-            .build();
-    private final ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
-    private final Validator validator = validatorFactory.getValidator();
+    private Film film;
+    private final FilmController filmController;
 
-    @Test
-    void shouldCreateFilm() {
-        Set<ConstraintViolation<Film>> violations = validator.validate(film);
-
-        Assertions.assertTrue(violations.isEmpty());
-    }
-
-    @Test
-    void shouldCreateFilmWithFirstFilmDate() {
-        Film filmWithFirstFilmDate = film
-                .toBuilder()
-                .releaseDate(LocalDate.parse("1895-12-28"))
+    @BeforeEach
+    public void setUp() {
+        film = Film.builder()
+                .name("name")
+                .description("desc")
+                .releaseDate(LocalDate.of(2007, 9, 1))
+                .duration(100)
+                .mpa(Mpa.builder().id(1).build())
                 .build();
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithFirstFilmDate);
-
-        Assertions.assertTrue(violations.isEmpty());
     }
 
     @Test
-    void shouldNotCreateFilmIfNameIsEmpty() {
-        String[] names = {"", " ", "  ", null};
-
-        Arrays.stream(names).forEach(name -> {
-            Film filmWithIncorrectName = film
-                    .toBuilder()
-                    .name(name)
-                    .build();
-
-            Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectName);
-
-            Assertions.assertFalse(violations.isEmpty());
-        });
+    public void nameCannotBeEmpty() {
+        assertThrows(NullPointerException.class, () -> film.setName(null));
     }
 
     @Test
-    void shouldNotCreateFilmIfDescriptionTooLong() {
-        Film filmWithIncorrectDescription = film
-                .toBuilder()
-                .description("f".repeat(201))
-                .build();
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectDescription);
-
-        Assertions.assertFalse(violations.isEmpty());
-        Assertions.assertEquals(1, violations.size());
+    public void filmMustBeCreatedWith200Desc() {
+        film.setDescription(RandomStringUtils.random(200));
+        filmController.postFilm(film);
+        assertFalse(filmController.getFilms().isEmpty());
     }
 
     @Test
-    void shouldNotCreateFilmIfReleaseDateIsWrong() {
-        Film filmWithIncorrectReleaseDate = film
-                .toBuilder()
-                .releaseDate(LocalDate.parse("1800-01-01"))
-                .build();
-
-        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectReleaseDate);
-
-        Assertions.assertFalse(violations.isEmpty());
-        Assertions.assertEquals(1, violations.size());
+    public void filmMustBeNotCreatedWith201Desc() {
+        film.setDescription(RandomStringUtils.random(201));
+        assertThrows(ValidationException.class, () -> filmController.postFilm(film));
     }
 
     @Test
-    void shouldNotCreateFilmIfDurationIsWrong() {
-        Film filmWithIncorrectDuration = film
-                .toBuilder()
-                .duration(-100)
-                .build();
+    public void releaseDate1895NotValid() {
+        film.setReleaseDate(LocalDate.of(1895, 12, 27));
+        assertThrows(ValidationException.class, () -> filmController.postFilm(film));
+    }
 
-        Set<ConstraintViolation<Film>> violations = validator.validate(filmWithIncorrectDuration);
+    @Test
+    public void releaseDate1896IsValid() {
+        film.setReleaseDate(LocalDate.of(1896, 12, 28));
+        filmController.postFilm(film);
+        assertFalse(filmController.getFilms().isEmpty());
+    }
 
-        Assertions.assertFalse(violations.isEmpty());
-        Assertions.assertEquals(1, violations.size());
+    @Test
+    public void durationIsNegativeNotValid() {
+        film.setDuration(-1);
+        assertThrows(ValidationException.class, () -> filmController.postFilm(film));
+    }
+
+    @Test
+    public void durationIsNegativeIsValid() {
+        film.setDuration(1);
+        filmController.postFilm(film);
+        assertFalse(filmController.getFilms().isEmpty());
     }
 }
