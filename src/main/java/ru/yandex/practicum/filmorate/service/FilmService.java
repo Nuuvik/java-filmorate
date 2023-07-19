@@ -10,8 +10,10 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.filmGenre.GenreStorage;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -70,15 +72,26 @@ public class FilmService {
         }
     }
 
-    public List<Film> getFamousFilms(Integer count) {
-        if (count != null) {
-            return getFilms().stream()
-                    .sorted((o1, o2) -> o2.getLikes().size() - o1.getLikes().size())
-                    .limit(count)
-                    .collect(Collectors.toList());
-        } else {
-            return null;
+    public List<Film> getPopularFilms(Integer count, Integer genreId, Integer year) {
+        List<Film> films = getFilms();
+
+        if (films.isEmpty()) {
+            return new ArrayList<>();
         }
+
+        Stream<Film> filmStream = films.stream();
+
+        if (genreId != null) {
+            filmStream = filmStream.filter(film -> film.getGenres().stream().anyMatch(genre -> genre.getId() == genreId));
+        }
+
+        if (year != null) {
+            filmStream = filmStream.filter(film -> film.getReleaseDate().getYear() == year);
+        }
+
+        return filmStream.sorted((o1, o2) -> o2.getLikes().size() - o1.getLikes().size())
+                .limit(count)
+                .collect(Collectors.toList());
     }
 
     private boolean checkFilmAndLikeInExistInDb(int id, int userId) {
