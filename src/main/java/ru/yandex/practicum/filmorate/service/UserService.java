@@ -8,9 +8,11 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -46,6 +48,15 @@ public class UserService {
     public User getUserById(int id) {
         if (storage.checkUserExistInBd(id)) {
             return storage.getUserById(id);
+        } else {
+            throw new NotFoundException("Пользователь не найден");
+        }
+    }
+
+    public String deleteUser(Integer id) {
+        if (storage.checkUserExistInBd(id)) {
+            storage.deleteUser(id);
+            return String.format("Пользователь с id %s удален", id);
         } else {
             throw new NotFoundException("Пользователь не найден");
         }

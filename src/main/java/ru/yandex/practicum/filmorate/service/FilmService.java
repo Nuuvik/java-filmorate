@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.filmGenre.GenreStorage;
 
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 public class FilmService {
     private final FilmStorage filmStorage;
     private final GenreStorage genreStorage;
+    private final DirectorStorage directorStorage;
 
     public List<Film> getFilms() {
         return genreStorage.setGenresInFilm(filmStorage.getFilms());
@@ -33,6 +36,9 @@ public class FilmService {
         validate(film);
         if (filmStorage.checkFilmExistInBd(film.getId())) {
             genreStorage.deleteFilmGenre(film);
+            if(film.getDirectors().isEmpty()){
+                directorStorage.deleteDirectorsFromFilm(film.getId());
+            }
             return genreStorage.setGenreInFilm(filmStorage.updateFilm(film));
         } else {
             throw new NotFoundException("Фильм не найден");
@@ -45,7 +51,15 @@ public class FilmService {
             throw new NotFoundException("Фильм не найден");
         }
         return genreStorage.setGenreInFilm(film);
+    }
 
+    public String deleteFilm(Integer id) {
+        if(filmStorage.checkFilmExistInBd(id)) {
+            filmStorage.deleteFilm(id);
+            return String.format("Фильм с id %s удален", id);
+        } else {
+            throw new NotFoundException("Фильм не найден");
+        }
     }
 
     public Film addLike(int filmId, int userId) {
@@ -72,12 +86,17 @@ public class FilmService {
 
     public List<Film> getFamousFilms(Integer count) {
         if (count != null) {
-            return getFilms().stream()
-                    .sorted((o1, o2) -> o2.getLikes().size() - o1.getLikes().size())
-                    .limit(count)
-                    .collect(Collectors.toList());
+            return genreStorage.setGenresInFilm(filmStorage.getFamousFilms(count));
         } else {
             return null;
+        }
+    }
+
+    public List<Film> getSortedDirectorFilms(Integer directorId, String sortBy) {
+        if(directorStorage.checkDirectorExistInDb(directorId)) {
+            return genreStorage.setGenresInFilm(filmStorage.getSortedDirectorFilms(directorId, sortBy));
+        } else {
+            throw new NotFoundException("Режиссёр не найден");
         }
     }
 

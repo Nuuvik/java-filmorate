@@ -22,7 +22,13 @@ public interface FilmStorage {
 
     void deleteLike(int userId, int filmId);
 
-    List<Film> setLikesInFilm(List<Film> films);
+    List<Film> setLikesAndDirectorsInFilm(List<Film> films);
 
     Set<Integer> getLikesByFilmId(int filmId);
+
+    void deleteFilm(Integer id);
+
+    List<Film> getSortedDirectorFilms(Integer directorId, String sortBy);
+
+    List<Film> getFamousFilms(Integer count);
 }
