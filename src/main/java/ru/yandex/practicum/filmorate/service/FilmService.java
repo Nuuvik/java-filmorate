@@ -45,7 +45,15 @@ public class FilmService {
             throw new NotFoundException("Фильм не найден");
         }
         return genreStorage.setGenreInFilm(film);
+    }
 
+    public String deleteFilm(Integer id) {
+        if (filmStorage.checkFilmExistInBd(id)) {
+            filmStorage.deleteFilm(id);
+            return String.format("Фильм с id %s удален", id);
+        } else {
+            throw new NotFoundException("Фильм не найден");
+        }
     }
 
     public Film addLike(int filmId, int userId) {
