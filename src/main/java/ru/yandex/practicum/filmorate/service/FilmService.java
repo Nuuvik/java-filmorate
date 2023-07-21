@@ -82,12 +82,35 @@ public class FilmService {
         }
     }
 
-    public List<Film> getFamousFilms(Integer count) {
+    public List<Film> getFamousFilms(Integer count, Integer genreId, Integer year) {
         if (count != null) {
-            return genreStorage.setGenresInFilm(filmStorage.getFamousFilms(count));
+            if (genreId != null && year != null) {
+                return genreStorage.setGenresInFilm(filmStorage.getPopularFilmsByGenreAndYear(count, genreId, year));
+            } else if (genreId != null) {
+                return genreStorage.setGenresInFilm(filmStorage.getPopularFilmsByGenre(count, genreId));
+            } else if (year != null) {
+                return genreStorage.setGenresInFilm(filmStorage.getPopularFilmsByYear(count, year));
+            } else {
+                return genreStorage.setGenresInFilm(filmStorage.getFamousFilms(count));
+            }
         } else {
             return null;
         }
+    }
+
+    public List<Film> getPopularFilmsByGenreAndYear(int count, int genreId, int year) {
+        List<Film> films = filmStorage.getPopularFilmsByGenreAndYear(count, genreId, year);
+        return genreStorage.setGenresInFilm(films);
+    }
+
+    public List<Film> getPopularFilmsByGenre(int count, int genreId) {
+        List<Film> films = filmStorage.getPopularFilmsByGenre(count, genreId);
+        return genreStorage.setGenresInFilm(films);
+    }
+
+    public List<Film> getPopularFilmsByYear(int count, int year) {
+        List<Film> films = filmStorage.getPopularFilmsByYear(count, year);
+        return genreStorage.setGenresInFilm(films);
     }
 
     public List<Film> getSortedDirectorFilms(Integer directorId, String sortBy) {
