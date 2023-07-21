@@ -17,7 +17,6 @@ import ru.yandex.practicum.filmorate.storage.filmGenre.GenreStorage;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component("filmDbStorage")
@@ -92,7 +91,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> setLikesAndDirectorsInFilm(List<Film> films) {
         List<Integer> filmIds = new ArrayList<>();
         films.forEach(film -> filmIds.add(film.getId()));
-        String sql =
+        String sqlQuery =
                 "SELECT \n" +
                         "f.id , \n" +
                         "l.user_id, \n" +
@@ -104,7 +103,7 @@ public class FilmDbStorage implements FilmStorage {
                         "LEFT JOIN DIRECTOR d ON df.director_id  = d.id \n" +
                         "where f.ID  IN (" + StringUtils.join(filmIds, ',') + ")" +
                         "order by user_id asc;";
-        SqlRowSet likeAndDirectorRows = jdbcTemplate.queryForRowSet(sql);
+        SqlRowSet likeAndDirectorRows = jdbcTemplate.queryForRowSet(sqlQuery);
         for (Film film : films) {
             film.getDirectors().clear();
         }
@@ -146,14 +145,14 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void deleteLike(int userId, int filmId) {
-        String sql = "DELETE FROM likes WHERE user_id = ? and film_id = ?";
-        jdbcTemplate.update(sql, userId, filmId);
+        String sqlQuery = "DELETE FROM likes WHERE user_id = ? and film_id = ?";
+        jdbcTemplate.update(sqlQuery, userId, filmId);
     }
 
     @Override
     public Set<Integer> getLikesByFilmId(int filmId) {
-        String sql = "SELECT user_id FROM likes WHERE film_id = ?";
-        return new HashSet<>(jdbcTemplate.query(sql, this::mapLikes, filmId));
+        String sqlQuery = "SELECT user_id FROM likes WHERE film_id = ?";
+        return new HashSet<>(jdbcTemplate.query(sqlQuery, this::mapLikes, filmId));
     }
 
     @Override
@@ -179,7 +178,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getFamousFilms(Integer count) {
-        String sql = "select f.* , m.id as mpa_id, " +
+        String sqlQuery = "select f.* , m.id as mpa_id, " +
                 "m.name as mpa_name, g.id as genre_id,g.name as genre_name, " +
                 "l.user_id as user_like_id " +
                 "from films f  " +
@@ -191,13 +190,43 @@ public class FilmDbStorage implements FilmStorage {
                 "GROUP BY f.ID " +
                 "ORDER BY COUNT(l.USER_ID) DESC " +
                 "LIMIT ?)";
-        List<Film> films = jdbcTemplate.query(sql, this::mapRowToFilms, count);
-        return setLikesAndDirectorsInFilm(films.stream().sorted((film1, film2) -> {
-                    int comp = film1.getLikes().size() - film2.getLikes().size();
-                    comp = -1 * comp;
-                    return comp;
-                })
-                .limit(count).collect(Collectors.toList()));
+
+        return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, count));
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByGenreAndYear(Integer count, Integer genreId, Integer year) {
+        String sqlQuery = "SELECT f.*, m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.id " +
+                "INNER JOIN film_genre fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM f.release_date) = ? " +
+                "ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id) DESC " +
+                "LIMIT ?";
+        return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, genreId, year, count));
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByGenre(Integer count, Integer genreId) {
+        String sqlQuery = "SELECT f.*, m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.id " +
+                "INNER JOIN film_genre fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? " +
+                "ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id) DESC " +
+                "LIMIT ?";
+        return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, genreId, count));
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByYear(Integer count, Integer year) {
+        String sqlQuery = "SELECT f.*, m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.id " +
+                "WHERE EXTRACT(YEAR FROM f.release_date) = ? " +
+                "ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id) DESC " +
+                "LIMIT ?";
+        return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, year, count));
     }
 
     private Integer mapFilmId(ResultSet resultSet, int rowNum) throws SQLException {
