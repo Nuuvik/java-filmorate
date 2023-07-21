@@ -53,6 +53,15 @@ public class UserService {
         }
     }
 
+    public String deleteUser(Integer id) {
+        if (storage.checkUserExistInBd(id)) {
+            storage.deleteUser(id);
+            return String.format("Пользователь с id %s удален", id);
+        } else {
+            throw new NotFoundException("Пользователь не найден");
+        }
+    }
+
     public List<User> getFriends(int id) {
         if (storage.checkUserExistInBd(id)) {
             return storage.getFriendsList(id);
