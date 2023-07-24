@@ -2,22 +2,23 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    @Qualifier("userDbStorage")
     private final UserStorage storage;
 
     public List<User> getUsers() {
@@ -43,7 +44,6 @@ public class UserService {
             throw new ValidationException();
         }
     }
-
 
     public User getUserById(int id) {
         if (storage.checkUserExistInBd(id)) {
@@ -117,5 +117,56 @@ public class UserService {
         } else {
             throw new ValidationException();
         }
+    }
+
+    public List<Film> getRecommendations(Integer userId, List<Film> allLikedFilms) {
+        if (!storage.checkUserExistInBd(userId)) {
+            throw new NotFoundException("Пользователь не найден");
+        }
+        List<Film> userLikes;
+        Map<Integer, List<Film>> usersAndLikes = new HashMap<>();
+        for (Film film : allLikedFilms) {
+            List<Integer> userLikesId = film.getLikes().stream().collect(Collectors.toList());
+            for (Integer id : userLikesId) {
+                if (!usersAndLikes.containsKey(id)) {
+                    List<Film> likedFilms = new ArrayList<>();
+                    likedFilms.add(film);
+                    usersAndLikes.put(id, likedFilms);
+                } else {
+                    usersAndLikes.get(id).add(film);
+                }
+            }
+        }
+        userLikes = usersAndLikes.get(userId);
+        if (userLikes == null) {
+            log.info("У пользователя с id={} нет лайков", userId);
+            return new ArrayList<>();
+        }
+        Map<Integer, Integer> frequencyLikes = new HashMap<>(); // userId/freq
+        for (Map.Entry<Integer, List<Film>> entry : usersAndLikes.entrySet()) {
+            if (entry.getKey().equals(userId)) {
+                continue;
+            }
+            if (!frequencyLikes.containsKey(entry.getKey())) {
+                frequencyLikes.put(entry.getKey(), 0);
+            }
+            Integer freq = frequencyLikes.get(entry.getKey());
+            userLikes.stream().filter(film -> entry.getValue().contains(film))
+                    .forEach(film -> frequencyLikes.put(entry.getKey(), freq + 1));
+        }
+
+        int maxFreq = 0;
+        Integer id = null;
+        for (Map.Entry<Integer, Integer> entry : frequencyLikes.entrySet()) {
+            if (maxFreq < entry.getValue()) {
+                maxFreq = entry.getValue();
+                id = entry.getKey();
+            }
+        }
+        if (maxFreq == 0) {
+            log.info("У пользователя с id={} нет общих лайков с кем либо", userId);
+            return new ArrayList<>();
+        }
+        return usersAndLikes.get(id).stream().filter(film -> !userLikes.contains(film)).collect(Collectors.toList());
     }
 }
