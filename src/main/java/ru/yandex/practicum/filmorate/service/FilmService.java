@@ -98,20 +98,6 @@ public class FilmService {
         }
     }
 
-    public List<Film> getPopularFilmsByGenreAndYear(int count, int genreId, int year) {
-        List<Film> films = filmStorage.getPopularFilmsByGenreAndYear(count, genreId, year);
-        return genreStorage.setGenresInFilm(films);
-    }
-
-    public List<Film> getPopularFilmsByGenre(int count, int genreId) {
-        List<Film> films = filmStorage.getPopularFilmsByGenre(count, genreId);
-        return genreStorage.setGenresInFilm(films);
-    }
-
-    public List<Film> getPopularFilmsByYear(int count, int year) {
-        List<Film> films = filmStorage.getPopularFilmsByYear(count, year);
-        return genreStorage.setGenresInFilm(films);
-    }
 
     public List<Film> getSortedDirectorFilms(Integer directorId, String sortBy) {
         if (directorStorage.checkDirectorExistInDb(directorId)) {
@@ -130,6 +116,19 @@ public class FilmService {
                 film.getDescription().length() > 200 ||
                 film.getDuration() <= 0) {
             throw new ValidationException();
+        }
+    }
+
+
+    public List<Film> searchFilms(String query, String by) {
+        if (by.equals("director")) {
+            return genreStorage.setGenresInFilm(filmStorage.searchFilmsByDirector(query));
+        } else if (by.equals("title")) {
+            return genreStorage.setGenresInFilm(filmStorage.searchFilmsByTitle(query));
+        } else if (by.equals("director,title") || by.equals("title,director")) {
+            return genreStorage.setGenresInFilm(filmStorage.searchFilmsByDirectorAndTitle(query));
+        } else {
+            throw new NotFoundException("Поиск может быть только по названию и режиссеру");
         }
     }
 }
