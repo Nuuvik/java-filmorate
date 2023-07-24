@@ -2,9 +2,9 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.storage.likes.ReviewLikesStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
@@ -45,8 +45,7 @@ public class ReviewService {
     public List<Review> getReviewsForFilm(Integer filmId, Integer count) {
         if (count <= 0) {
             log.warn("Пользователь ввёл неверное значение количества выводимых строк = " + count);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Пользователь ввёл неверное значение количества выводимых строк = " + count);
+            throw new ValidationException();
         }
         if (filmId == null) {
             return reviewStorage.getAllReviewsWithLimit(count);
@@ -71,21 +70,21 @@ public class ReviewService {
     private void validateReviewId(Integer reviewId) {
         if (reviewId <= 0) {
             log.warn("Пользователь ввёл неверный id отзыва = " + reviewId);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Отзыв с id = " + reviewId + " не найден");
+            throw new NotFoundException("Не найден id");
         }
     }
 
     private void validateFilmId(Integer filmId) {
         if (filmId <= 0) {
             log.warn("Пользователь ввёл неверный id фильма = " + filmId);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Фильм с id = " + filmId + " не найден");
+            throw new NotFoundException("Не найден id");
         }
     }
 
     private void validateUserId(Integer userId) {
         if (userId <= 0) {
             log.warn("Пользователь ввёл неверный id пользователя = " + userId);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь с id = " + userId + " не найден");
+            throw new NotFoundException("Не найден id");
         }
     }
 }

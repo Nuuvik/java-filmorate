@@ -3,10 +3,9 @@ package ru.yandex.practicum.filmorate.storage.likes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -24,19 +23,19 @@ public class ReviewLikesDbStorage implements ReviewLikesStorage {
         if (!dbContainsReview(reviewId)) {
             String message = "Ошибка запроса добавления лайка." +
                     " Невозможно добавить лайк к отзыву, которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         if (!dbContainsUser(userId)) {
             String message = "Ошибка запроса удаления лайка." +
                     " Невозможно удалить лайк пользователяб которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         String sql = "INSERT INTO REVIEW_LIKES (REVIEW_ID, USERS_ID, IS_POSITIVE) " +
                 "VALUES (?, ?, ?)";
         try {
             jdbcTemplate.update(sql, reviewId, userId, isPositive);
         } catch (DuplicateKeyException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Нельзя оценить дважды один и тот же отзыв");
+            throw new NotFoundException("Не найден id");
         }
     }
 
@@ -45,12 +44,12 @@ public class ReviewLikesDbStorage implements ReviewLikesStorage {
         if (!dbContainsReview(reviewId)) {
             String message = "Ошибка запроса удаления лайка." +
                     " Невозможно удалить лайк к отзыву, которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         if (!dbContainsUser(userId)) {
             String message = "Ошибка запроса удаления лайка." +
                     " Невозможно удалить лайк пользователяб которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         String sql = "DELETE FROM REVIEW_LIKES WHERE REVIEW_ID = ? AND USERS_ID = ?";
         jdbcTemplate.update(sql, reviewId, userId);

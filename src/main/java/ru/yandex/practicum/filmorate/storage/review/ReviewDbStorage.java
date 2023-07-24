@@ -2,11 +2,10 @@ package ru.yandex.practicum.filmorate.storage.review;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -30,11 +29,11 @@ public class ReviewDbStorage implements ReviewStorage {
     public Review addReview(Review review) {
         if (!dbContainsFilm(review.getFilmId())) {
             String message = "Невозможно создать отзыв к фильму, которого не существует";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         if (!dbContainsUser(review.getUserId())) {
             String message = "Невозможно создать отзыв от пользователя, которого не существует";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         SimpleJdbcInsert simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("reviews")
@@ -48,7 +47,7 @@ public class ReviewDbStorage implements ReviewStorage {
         if (!dbContainsReview(review.getReviewId())) {
             String message = "Ошибка запроса обновления отзыва." +
                     " Невозможно обновить отзыв которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         String sql = "UPDATE REVIEWS SET CONTENT = ?, IS_POSITIVE = ? WHERE REVIEW_ID = ?";
         jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getReviewId());
@@ -61,7 +60,7 @@ public class ReviewDbStorage implements ReviewStorage {
         if (!dbContainsReview(reviewId)) {
             String message = "Ошибка запроса удаления отзыва." +
                     " Невозможно удалить отзыв которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         String sql = "DELETE FROM REVIEWS WHERE REVIEW_ID = ?";
         jdbcTemplate.update(sql, reviewId);
@@ -72,7 +71,7 @@ public class ReviewDbStorage implements ReviewStorage {
         if (!dbContainsReview(reviewId)) {
             String message = "Ошибка запроса отзыва." +
                     " Невозможно запросить отзыв которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         String sql = "SELECT R.REVIEW_ID, R.CONTENT, R.IS_POSITIVE, R.USERS_ID, R.FILMS_id, " +
                 "(SUM(CASE WHEN RL.IS_POSITIVE = TRUE THEN 1 ELSE 0 END) - " +
@@ -89,7 +88,7 @@ public class ReviewDbStorage implements ReviewStorage {
         if (!dbContainsFilm(filmId)) {
             String message = "Ошибка запроса фильма." +
                     " Невозможно запросить фильм которого не существует.";
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+            throw new NotFoundException(message);
         }
         String sql = "SELECT R.REVIEW_ID, R.CONTENT, R.IS_POSITIVE, R.USERS_ID, R.FILMS_id, " +
                 "(SUM(CASE WHEN RL.IS_POSITIVE = TRUE THEN 1 ELSE 0 END) - " +
