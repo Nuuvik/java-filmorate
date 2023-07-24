@@ -20,7 +20,7 @@ public class ReviewLikesDbStorage implements ReviewLikesStorage {
     private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public void addLike(Integer reviewId, Integer userId, boolean is_positive) {
+    public void addLike(Integer reviewId, Integer userId, boolean isPositive) {
         if (!dbContainsReview(reviewId)) {
             String message = "Ошибка запроса добавления лайка." +
                     " Невозможно добавить лайк к отзыву, которого не существует.";
@@ -34,7 +34,7 @@ public class ReviewLikesDbStorage implements ReviewLikesStorage {
         String sql = "INSERT INTO REVIEW_LIKES (REVIEW_ID, USERS_ID, IS_POSITIVE) " +
                 "VALUES (?, ?, ?)";
         try {
-            jdbcTemplate.update(sql, reviewId, userId, is_positive);
+            jdbcTemplate.update(sql, reviewId, userId, isPositive);
         } catch (DuplicateKeyException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Нельзя оценить дважды один и тот же отзыв");
         }
