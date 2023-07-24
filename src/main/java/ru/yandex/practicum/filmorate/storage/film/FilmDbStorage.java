@@ -262,4 +262,38 @@ public class FilmDbStorage implements FilmStorage {
         values.put("mpa_id", film.getMpa().getId());
         return values;
     }
+
+    @Override
+    public List<Film> searchFilmsByTitle(String title) {
+        String sqlQuery = "SELECT f.*, m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.id " +
+                "WHERE lower(f.name) LIKE lower(?) " +
+                "ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id) DESC";
+        return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, "%" + title + "%"));
+    }
+
+    @Override
+    public List<Film> searchFilmsByDirector(String director) {
+        String sqlQuery = "SELECT f.*, m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.id " +
+                "LEFT JOIN director_films df ON f.id = df.film_id " +
+                "LEFT JOIN director d ON df.director_id = d.id " +
+                "WHERE lower(d.name) LIKE lower(?) " +
+                "ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id) DESC";
+        return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, "%" + director + "%"));
+    }
+
+    @Override
+    public List<Film> searchFilmsByDirectorAndTitle(String query) {
+        String sqlQuery = "SELECT f.*, m.name AS mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa m ON f.mpa_id = m.id " +
+                "LEFT JOIN director_films df ON f.id = df.film_id " +
+                "LEFT JOIN director d ON df.director_id = d.id " +
+                "WHERE lower(f.name) LIKE lower(?) OR lower(d.name) LIKE lower(?) " +
+                "ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id) DESC";
+        return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, "%" + query + "%", "%" + query + "%"));
+    }
 }
