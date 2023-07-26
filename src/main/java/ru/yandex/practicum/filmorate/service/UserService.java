@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -168,5 +169,15 @@ public class UserService {
             return new ArrayList<>();
         }
         return usersAndLikes.get(id).stream().filter(film -> !userLikes.contains(film)).collect(Collectors.toList());
+    }
+
+    public List<Feed> getUserFeed(Integer userId) {
+        if (storage.checkUserExistInBd(userId)) {
+            log.info("Новостная лента пользователя: {} {}", storage.getUserById(userId).getName(), storage.getUserFeed(userId));
+            return storage.getUserFeed(userId);
+        } else {
+            throw new NotFoundException("Пользователь не найден");
+        }
+
     }
 }

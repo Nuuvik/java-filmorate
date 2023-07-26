@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class ReviewDbStorage implements ReviewStorage {
                 .withTableName("reviews")
                 .usingGeneratedKeyColumns("review_id");
         review.setReviewId(simpleJdbcInsert.executeAndReturnKey(toMap(review)).intValue());
+        addToFeedReviewCreate(review.getReviewId(), review.getUserId());
         return review;
     }
 
@@ -52,6 +54,7 @@ public class ReviewDbStorage implements ReviewStorage {
         String sql = "UPDATE REVIEWS SET CONTENT = ?, IS_POSITIVE = ? WHERE REVIEW_ID = ?";
         jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getReviewId());
         review = getReviewById(review.getReviewId());
+        addToFeedReviewUpdate(review.getReviewId());
         return review;
     }
 
@@ -63,6 +66,8 @@ public class ReviewDbStorage implements ReviewStorage {
             throw new NotFoundException(message);
         }
         String sql = "DELETE FROM REVIEWS WHERE REVIEW_ID = ?";
+        Review review = getReviewById(reviewId);
+        addToFeedReviewDelete(reviewId, review.getUserId());
         jdbcTemplate.update(sql, reviewId);
     }
 
@@ -165,5 +170,30 @@ public class ReviewDbStorage implements ReviewStorage {
         values.put("users_id", review.getUserId());
         values.put("films_id", review.getFilmId());
         return values;
+    }
+
+    private void addToFeedReviewUpdate(Integer reviewId) {
+        String sqlQuery = "INSERT INTO feed (user_id, event_type, operation,entity_id,time_stamp) " +
+                "VALUES (?, 'REVIEW', 'UPDATE', ?,?)";
+        long currentTimeMillis = System.currentTimeMillis();
+        Timestamp timestamp = new Timestamp(currentTimeMillis);
+        jdbcTemplate.update(sqlQuery, getReviewById(reviewId).getUserId(),
+                reviewId, timestamp);
+    }
+
+    private void addToFeedReviewCreate(Integer reviewId, Integer userId) {
+        String sql = "INSERT INTO feed (user_id, event_type, operation,entity_id,time_stamp) " +
+                "VALUES (?, 'REVIEW', 'ADD', ?,?)";
+        long currentTimeMillis = System.currentTimeMillis();
+        Timestamp timestamp = new Timestamp(currentTimeMillis);
+        jdbcTemplate.update(sql, userId, reviewId, timestamp);
+    }
+
+    private void addToFeedReviewDelete(Integer reviewId, Integer userId) {
+        String sqlQuery = "INSERT INTO feed (user_id, event_type, operation,entity_id,time_stamp)" +
+                " VALUES (?, 'REVIEW', 'REMOVE', ?,?)";
+        long currentTimeMillis = System.currentTimeMillis();
+        Timestamp timestamp = new Timestamp(currentTimeMillis);
+        jdbcTemplate.update(sqlQuery, userId, reviewId, timestamp);
     }
 }
