@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.filmGenre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +21,7 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final GenreStorage genreStorage;
     private final DirectorStorage directorStorage;
+    private final UserStorage userStorage;
 
     public List<Film> getFilms() {
         return genreStorage.setGenresInFilm(filmStorage.getFilms());
@@ -105,6 +107,16 @@ public class FilmService {
         } else {
             throw new NotFoundException("Режиссёр не найден");
         }
+    }
+
+    public List<Film> getCommonFilmsByPopularity(Integer userId, Integer friendId) {
+        if (!userStorage.checkUserExistInBd(userId)) {
+            throw new NotFoundException(String.format("Ползователь с id %s не найден", userId));
+        }
+        if (!userStorage.checkUserExistInBd(friendId)) {
+            throw new NotFoundException(String.format("Ползователь с id %s не найден", friendId));
+        }
+        return genreStorage.setGenresInFilm(filmStorage.getCommonFilmsByPopularity(userId, friendId));
     }
 
     private boolean checkFilmAndLikeInExistInDb(int id, int userId) {
