@@ -16,6 +16,7 @@ import ru.yandex.practicum.filmorate.storage.filmGenre.GenreStorage;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 
 @Slf4j
@@ -141,12 +142,14 @@ public class FilmDbStorage implements FilmStorage {
     public void addLike(int userId, int filmId) {
         String sqlQuery = "INSERT into likes (film_id, user_id) values(?, ?)";
         jdbcTemplate.update(sqlQuery, filmId, userId);
+        addToFeedAddLike(userId, filmId);
     }
 
     @Override
     public void deleteLike(int userId, int filmId) {
         String sqlQuery = "DELETE FROM likes WHERE user_id = ? and film_id = ?";
         jdbcTemplate.update(sqlQuery, userId, filmId);
+        addToFeedDeleteLike(userId, filmId);
     }
 
     @Override
@@ -311,5 +314,21 @@ public class FilmDbStorage implements FilmStorage {
                 "WHERE lower(f.name) LIKE lower(?) OR lower(d.name) LIKE lower(?) " +
                 "ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.id) DESC";
         return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, "%" + query + "%", "%" + query + "%"));
+    }
+
+    private void addToFeedDeleteLike(Integer userId, Integer filmId) {
+        String sql = "INSERT INTO feed (user_id, event_type, operation,entity_id,time_stamp)" +
+                " VALUES (?, 'LIKE', 'REMOVE', ?, ?)";
+        long currentTimeMillis = System.currentTimeMillis();
+        Timestamp timestamp = new Timestamp(currentTimeMillis);
+        jdbcTemplate.update(sql, userId, filmId, timestamp);
+    }
+
+    private void addToFeedAddLike(Integer userId, Integer filmId) {
+        String sql = "INSERT INTO feed (user_id, event_type, operation,entity_id,time_stamp)" +
+                " VALUES (?, 'LIKE', 'ADD', ?, ?)";
+        long currentTimeMillis = System.currentTimeMillis();
+        Timestamp timestamp = new Timestamp(currentTimeMillis);
+        jdbcTemplate.update(sql, userId, filmId, timestamp);
     }
 }

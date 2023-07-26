@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -26,4 +27,6 @@ public interface UserStorage {
     void deleteFriend(int userId, int friendId);
 
     void deleteUser(Integer id);
+
+    List<Feed> getUserFeed(Integer userId);
 }

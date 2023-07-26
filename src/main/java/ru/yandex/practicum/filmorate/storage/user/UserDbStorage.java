@@ -5,10 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -73,6 +75,7 @@ public class UserDbStorage implements UserStorage {
     public void addFriend(int userId, int friendId) {
         String sqlQuery = "INSERT into friends (user_Id, friend_Id) values(?, ?);";
         jdbcTemplate.update(sqlQuery, userId, friendId);
+        addToFeedAddFriend(userId, friendId);
     }
 
     @Override
@@ -100,6 +103,7 @@ public class UserDbStorage implements UserStorage {
     public void deleteFriend(int userId, int friendId) {
         String sql = "DELETE FROM friends WHERE user_id = ? AND friend_id = ?;";
         jdbcTemplate.update(sql, userId, friendId);
+        addToFeedDeleteFriend(userId, friendId);
     }
 
     private Integer mapRowToFriedIdFromFriends(ResultSet resultSet, int rowNum) throws SQLException {
@@ -125,5 +129,39 @@ public class UserDbStorage implements UserStorage {
         values.put("name", user.getName());
         values.put("birthday", user.getBirthday());
         return values;
+    }
+
+    @Override
+    public List<Feed> getUserFeed(Integer userId) {
+        String sqlQuery = "SELECT * FROM feed WHERE user_id = ?";
+        return jdbcTemplate.query(sqlQuery, this::makeFeed, userId);
+    }
+
+    private Feed makeFeed(ResultSet rs, int rowNum) throws SQLException {
+        long timestampInMillis = rs.getTimestamp("time_stamp").getTime(); // Преобразование в миллисекунды
+        return Feed.builder()
+                .userId(rs.getInt("user_id"))
+                .eventType(rs.getString("event_type"))
+                .operation(rs.getString("operation"))
+                .eventId(rs.getInt("event_id"))
+                .entityId(rs.getInt("entity_id"))
+                .timestamp(timestampInMillis) // Используем миллисекунды
+                .build();
+    }
+
+    private void addToFeedDeleteFriend(Integer userId, Integer friendId) {
+        String sql = "INSERT INTO feed (user_id, event_type, operation, entity_id, time_stamp) " +
+                "VALUES (?, 'FRIEND', 'REMOVE', ?, ?)";
+        long currentTimeMillis = System.currentTimeMillis();
+        Timestamp timestamp = new Timestamp(currentTimeMillis);
+        jdbcTemplate.update(sql, userId, friendId, timestamp);
+    }
+
+    private void addToFeedAddFriend(Integer userId, Integer friendId) {
+        String sql = "INSERT INTO feed (user_id, event_type, operation, entity_id, time_stamp)" +
+                " VALUES (?, 'FRIEND', 'ADD', ?, ?)";
+        long currentTimeMillis = System.currentTimeMillis();
+        Timestamp timestamp = new Timestamp(currentTimeMillis);
+        jdbcTemplate.update(sql, userId, friendId, timestamp);
     }
 }
