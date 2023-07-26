@@ -142,7 +142,11 @@ public class FilmDbStorage implements FilmStorage {
     public void addLike(int userId, int filmId) {
         String sqlQuery = "INSERT into likes (film_id, user_id) values(?, ?)";
         addToFeedAddLike(userId, filmId);
-        jdbcTemplate.update(sqlQuery, filmId, userId);
+        try {
+            jdbcTemplate.update(sqlQuery, filmId, userId);
+        } catch (RuntimeException e) {
+            log.debug("Лайк уже существует");
+        }
 
     }
 
@@ -191,10 +195,10 @@ public class FilmDbStorage implements FilmStorage {
                 "left join film_genre fg ON f.id = fg.film_id " +
                 "left join genre g on fg.genre_id = g.id " +
                 "left join likes l on f.id = l.film_id " +
-                "WHERE f.id IN (SELECT f.id  AS likes_count FROM FILMS f  LEFT JOIN likes l ON f.id = l.film_id " +
+                "WHERE f.id IN (SELECT f.id AS likes_count FROM FILMS f LEFT JOIN likes l ON f.id = l.film_id " +
                 "GROUP BY f.ID " +
-                "ORDER BY COUNT(l.USER_ID) DESC " +
-                "LIMIT ?)";
+                "ORDER BY COUNT(l.USER_ID) DESC) " +
+                "LIMIT ?";
 
         return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, count));
     }
