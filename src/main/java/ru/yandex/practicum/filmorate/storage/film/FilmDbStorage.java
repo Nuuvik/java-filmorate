@@ -141,15 +141,17 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public void addLike(int userId, int filmId) {
         String sqlQuery = "INSERT into likes (film_id, user_id) values(?, ?)";
-        jdbcTemplate.update(sqlQuery, filmId, userId);
         addToFeedAddLike(userId, filmId);
+        jdbcTemplate.update(sqlQuery, filmId, userId);
+
     }
 
     @Override
     public void deleteLike(int userId, int filmId) {
         String sqlQuery = "DELETE FROM likes WHERE user_id = ? and film_id = ?";
-        jdbcTemplate.update(sqlQuery, userId, filmId);
         addToFeedDeleteLike(userId, filmId);
+        jdbcTemplate.update(sqlQuery, userId, filmId);
+
     }
 
     @Override
@@ -245,7 +247,7 @@ public class FilmDbStorage implements FilmStorage {
                 "GROUP BY f.id " +
                 "ORDER BY COUNT(l.user_id) DESC";
         return setLikesAndDirectorsInFilm(jdbcTemplate
-                .query(sqlQuery,this::mapRowToFilms, userId, friendId));
+                .query(sqlQuery, this::mapRowToFilms, userId, friendId));
     }
 
     private Integer mapFilmId(ResultSet resultSet, int rowNum) throws SQLException {
