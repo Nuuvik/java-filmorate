@@ -229,6 +229,22 @@ public class FilmDbStorage implements FilmStorage {
         return setLikesAndDirectorsInFilm(jdbcTemplate.query(sqlQuery, this::mapRowToFilms, year, count));
     }
 
+    @Override
+    public List<Film> getCommonFilmsByPopularity(Integer userId, Integer friendId) {
+        String sqlQuery = "select f.* , m.id as mpa_id, m.name as mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa m on f.mpa_id = m.id  " +
+                "LEFT JOIN likes l on f.id = l.film_id " +
+                "WHERE f.id IN (SELECT f.id FROM films f " +
+                "LEFT JOIN likes lUser On lUser.film_id = f.id " +
+                "LEFT JOIN likes lFriend On lFriend.film_id = f.id " +
+                "WHERE lUser.user_id = ? and lFriend.user_id = ?) " +
+                "GROUP BY f.id " +
+                "ORDER BY COUNT(l.user_id) DESC";
+        return setLikesAndDirectorsInFilm(jdbcTemplate
+                .query(sqlQuery,this::mapRowToFilms, userId, friendId));
+    }
+
     private Integer mapFilmId(ResultSet resultSet, int rowNum) throws SQLException {
         return resultSet.getInt("id");
     }
