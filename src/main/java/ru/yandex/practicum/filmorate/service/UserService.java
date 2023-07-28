@@ -27,7 +27,7 @@ public class UserService {
     }
 
     public User addUser(User user) {
-        if (validation(user)) {
+        if (isValid(user)) {
             return storage.addUser(user);
         } else {
             throw new ValidationException();
@@ -35,7 +35,7 @@ public class UserService {
     }
 
     public User updateUser(User user) {
-        if (validation(user)) {
+        if (isValid(user)) {
             if (storage.checkUserExistInBd(user.getId())) {
                 return storage.updateUser(user);
             } else {
@@ -107,7 +107,7 @@ public class UserService {
         return storage.checkUserExistInBd(id) && storage.checkUserExistInBd(otherId);
     }
 
-    private boolean validation(User user) throws NullPointerException {
+    private boolean isValid(User user) throws NullPointerException {
         if (user.getBirthday().isBefore(LocalDate.now()) && user.getEmail().contains("@")
                 && !user.getLogin().isBlank()) {
             if (user.getName().isBlank()) {
@@ -121,9 +121,7 @@ public class UserService {
     }
 
     public List<Film> getRecommendations(Integer userId, List<Film> allLikedFilms) {
-        if (!storage.checkUserExistInBd(userId)) {
-            throw new NotFoundException("Пользователь не найден");
-        }
+        Optional.ofNullable(storage.checkUserExistInBd(userId)).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         List<Film> userLikes;
         Map<Integer, List<Film>> usersAndLikes = new HashMap<>();
         for (Film film : allLikedFilms) {

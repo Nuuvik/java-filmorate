@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.storage.likes;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -27,12 +26,12 @@ public class ReviewLikesDbStorage implements ReviewLikesStorage {
         }
         if (!dbContainsUser(userId)) {
             String message = "Ошибка запроса удаления лайка." +
-                    " Невозможно удалить лайк пользователяб которого не существует.";
+                    " Невозможно добавить лайк пользователя, которого не существует.";
             throw new NotFoundException(message);
         }
         String sql = "INSERT INTO REVIEW_LIKES (REVIEW_ID, USERS_ID, IS_POSITIVE) " +
                 "VALUES (?, ?, ?)";
-            jdbcTemplate.update(sql, reviewId, userId, isPositive);
+        jdbcTemplate.update(sql, reviewId, userId, isPositive);
     }
 
     @Override
@@ -44,7 +43,7 @@ public class ReviewLikesDbStorage implements ReviewLikesStorage {
         }
         if (!dbContainsUser(userId)) {
             String message = "Ошибка запроса удаления лайка." +
-                    " Невозможно удалить лайк пользователяб которого не существует.";
+                    " Невозможно удалить лайк пользователя, которого не существует.";
             throw new NotFoundException(message);
         }
         String sql = "DELETE FROM REVIEW_LIKES WHERE REVIEW_ID = ? AND USERS_ID = ?";
