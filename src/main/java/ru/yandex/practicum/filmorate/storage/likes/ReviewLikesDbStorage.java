@@ -32,11 +32,7 @@ public class ReviewLikesDbStorage implements ReviewLikesStorage {
         }
         String sql = "INSERT INTO REVIEW_LIKES (REVIEW_ID, USERS_ID, IS_POSITIVE) " +
                 "VALUES (?, ?, ?)";
-        try {
             jdbcTemplate.update(sql, reviewId, userId, isPositive);
-        } catch (DuplicateKeyException e) {
-            throw new NotFoundException("Не найден id");
-        }
     }
 
     @Override

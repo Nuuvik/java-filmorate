@@ -19,7 +19,7 @@ public class ErrorHandler {
         return Map.of("error", e.getMessage());
     }
 
-    @ExceptionHandler({IndexOutOfBoundsException.class, NotFoundException.class})
+    @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> handleBadRequest(final RuntimeException e) {
         return Map.of("error", e.getMessage());

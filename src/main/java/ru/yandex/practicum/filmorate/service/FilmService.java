@@ -46,11 +46,10 @@ public class FilmService {
     }
 
     public Film getFilmById(int filmId) {
-        Film film = filmStorage.getFilmById(filmId);
-        if (film == null) {
-            throw new NotFoundException("Фильм не найден");
+        if (filmStorage.checkFilmExistInBd(filmId)) {
+            return genreStorage.setGenreInFilm(filmStorage.getFilmById(filmId));
         }
-        return genreStorage.setGenreInFilm(film);
+        throw new NotFoundException("Фильм не найден");
     }
 
     public String deleteFilm(Integer id) {

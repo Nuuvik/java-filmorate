@@ -18,7 +18,6 @@ public class DirectorService {
     private final DirectorStorage directorStorage;
 
     public Director createDirector(Director director) {
-        validateDirectorsName(director);
         return directorStorage.createDirector(director);
     }
 
@@ -48,14 +47,6 @@ public class DirectorService {
             return String.format("Режиссёр с id %s удалён", id);
         } else {
             throw new NotFoundException("Режиссёр не найден");
-        }
-    }
-
-    public void validateDirectorsName(Director director) {
-        if (!director.getName().isBlank() && !director.getName().equals(" ")) {
-            log.info("Проверка режиссёра пройдена");
-        } else {
-            throw new ValidationException();
         }
     }
 }
