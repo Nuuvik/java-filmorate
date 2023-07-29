@@ -2,20 +2,24 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    @Qualifier("userDbStorage")
     private final UserStorage storage;
 
     public List<User> getUsers() {
@@ -23,7 +27,7 @@ public class UserService {
     }
 
     public User addUser(User user) {
-        if (validation(user)) {
+        if (isValid(user)) {
             return storage.addUser(user);
         } else {
             throw new ValidationException();
@@ -31,7 +35,7 @@ public class UserService {
     }
 
     public User updateUser(User user) {
-        if (validation(user)) {
+        if (isValid(user)) {
             if (storage.checkUserExistInBd(user.getId())) {
                 return storage.updateUser(user);
             } else {
@@ -42,10 +46,18 @@ public class UserService {
         }
     }
 
-
     public User getUserById(int id) {
         if (storage.checkUserExistInBd(id)) {
             return storage.getUserById(id);
+        } else {
+            throw new NotFoundException("Пользователь не найден");
+        }
+    }
+
+    public String deleteUser(Integer id) {
+        if (storage.checkUserExistInBd(id)) {
+            storage.deleteUser(id);
+            return String.format("Пользователь с id %s удален", id);
         } else {
             throw new NotFoundException("Пользователь не найден");
         }
@@ -95,7 +107,7 @@ public class UserService {
         return storage.checkUserExistInBd(id) && storage.checkUserExistInBd(otherId);
     }
 
-    private boolean validation(User user) throws NullPointerException {
+    private boolean isValid(User user) throws NullPointerException {
         if (user.getBirthday().isBefore(LocalDate.now()) && user.getEmail().contains("@")
                 && !user.getLogin().isBlank()) {
             if (user.getName().isBlank()) {
@@ -106,5 +118,64 @@ public class UserService {
         } else {
             throw new ValidationException();
         }
+    }
+
+    public List<Film> getRecommendations(Integer userId, List<Film> allLikedFilms) {
+        Optional.ofNullable(storage.checkUserExistInBd(userId)).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        List<Film> userLikes;
+        Map<Integer, List<Film>> usersAndLikes = new HashMap<>();
+        for (Film film : allLikedFilms) {
+            List<Integer> userLikesId = film.getLikes().stream().collect(Collectors.toList());
+            for (Integer id : userLikesId) {
+                if (!usersAndLikes.containsKey(id)) {
+                    List<Film> likedFilms = new ArrayList<>();
+                    likedFilms.add(film);
+                    usersAndLikes.put(id, likedFilms);
+                } else {
+                    usersAndLikes.get(id).add(film);
+                }
+            }
+        }
+        userLikes = usersAndLikes.get(userId);
+        if (userLikes == null) {
+            log.info("У пользователя с id={} нет лайков", userId);
+            return new ArrayList<>();
+        }
+        Map<Integer, Integer> frequencyLikes = new HashMap<>(); // userId/freq
+        for (Map.Entry<Integer, List<Film>> entry : usersAndLikes.entrySet()) {
+            if (entry.getKey().equals(userId)) {
+                continue;
+            }
+            if (!frequencyLikes.containsKey(entry.getKey())) {
+                frequencyLikes.put(entry.getKey(), 0);
+            }
+            Integer freq = frequencyLikes.get(entry.getKey());
+            userLikes.stream().filter(film -> entry.getValue().contains(film))
+                    .forEach(film -> frequencyLikes.put(entry.getKey(), freq + 1));
+        }
+
+        int maxFreq = 0;
+        Integer id = null;
+        for (Map.Entry<Integer, Integer> entry : frequencyLikes.entrySet()) {
+            if (maxFreq < entry.getValue()) {
+                maxFreq = entry.getValue();
+                id = entry.getKey();
+            }
+        }
+        if (maxFreq == 0) {
+            log.info("У пользователя с id={} нет общих лайков с кем либо", userId);
+            return new ArrayList<>();
+        }
+        return usersAndLikes.get(id).stream().filter(film -> !userLikes.contains(film)).collect(Collectors.toList());
+    }
+
+    public List<Feed> getUserFeed(Integer userId) {
+        if (storage.checkUserExistInBd(userId)) {
+            log.info("Новостная лента пользователя: {} {}", storage.getUserById(userId).getName(), storage.getUserFeed(userId));
+            return storage.getUserFeed(userId);
+        } else {
+            throw new NotFoundException("Пользователь не найден");
+        }
+
     }
 }
